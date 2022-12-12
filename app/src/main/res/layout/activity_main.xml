@@ -14,18 +14,18 @@
         android:theme="@style/Theme.INVENTARIOAPP.AppBarOverlay">
 
         <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar_main"
             android:layout_width="match_parent"
-            android:id="@+id/toolbar"
-            app:title="@string/app_name"
+            android:layout_height="wrap_content"
             app:menu="@menu/menu"
-            android:visibility="gone"
-            android:layout_height="wrap_content"/>
+            app:title="@string/app_name" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/hintSearch"
             android:id="@+id/search_tv"
-            android:padding="12dp"
+           android:padding="10dp"
             android:gravity="center_vertical"
             android:drawableEnd="@drawable/ic_baseline_search_24"/>
 

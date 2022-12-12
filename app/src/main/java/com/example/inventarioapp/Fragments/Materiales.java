@@ -19,8 +19,21 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.example.inventarioapp.Interface.AdminDB;
+import com.example.inventarioapp.Interface.GetApiService;
+import com.example.inventarioapp.Interface.GetSharedPreferences;
+import com.example.inventarioapp.Interface.InterfaceApi;
+import com.example.inventarioapp.Models.DatosDownload;
+import com.example.inventarioapp.Models.ModelSaveEncuesta;
+import com.example.inventarioapp.Models.ProcedureUpload;
+import com.example.inventarioapp.Models.SaveDatosUpload;
 import com.example.inventarioapp.R;
 import com.google.android.material.snackbar.Snackbar;
+
+import java.util.ArrayList;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 
 public class Materiales extends Fragment {
@@ -81,54 +94,82 @@ public class Materiales extends Fragment {
            }
         });
 
-        btn_search.setOnClickListener( v -> {
-            Search();
-        });
-
     }
     void Views(View view){
-        btn_search = view.findViewById(R.id.search);
-        et_codigo = view.findViewById(R.id.codigoMaterial);
+
         et_cantidad =view.findViewById(R.id.cantidad);
         btn_agregar = view.findViewById(R.id.agregar);
-        //tv_descrpcion = view.findViewById(R.id.descripcion_material);
         layout =view.findViewById(R.id.layout_materiales);
 
     }
 
     void getTexts(){
-        codigo =et_codigo.getText().toString().trim();
-        descripcion  = tv_descrpcion.getText().toString().trim();
         cantidad = et_cantidad.getText().toString().trim();
     }
 
     void GuardarDatos(){
-      try {
-          getTexts();
-          SQLiteDatabase db = AdminDB.Connection(getActivity());
-          ContentValues values = new ContentValues();
-          values.put("CODIGO", codigo );
-          values.put("NOMBRE", descripcion);
-          values.put("CANTIDAD", cantidad);
-          values.put("ESTADO", "N");
-          Cursor cursor = db.rawQuery("SELECT * FROM MATERIALES WHERE CODIGO LIKE '"+codigo+"'", null);
-          if (cursor.getCount()==0){
-              db.insert("MATERIALES" ,null, values);
-              Log.e("TAG", "GuardarDatos: Guarda" );
-              Clean();
-          }else {
-              db.update("MATERIALES",values, "CODIGO =?", new String[]{codigo});
-              Log.e("TAG", "GuardarDatos: Actualiza" );
-              Clean();
-          }
+     try {
+            getTexts();
+            TextView textView = getActivity().findViewById(R.id.search_tv);
+            codigo =textView.getText().toString().trim().split("-")[0];
+            // SendData.SendFormulario(getActivity(), codigo, formato,caracter,prefijo,valor_ini, sufijo, cantidad,"Tecnico", 0, "");
+            final InterfaceApi[] api = new InterfaceApi[1];
+            ArrayList<SaveDatosUpload> main = new ArrayList<>();
+            SaveDatosUpload upload = new SaveDatosUpload();
+            ModelSaveEncuesta encuesta  = new ModelSaveEncuesta();
+            ProcedureUpload proce = new ProcedureUpload();
+            //##################################
+            proce.setDpto("WS_LEGA_CONTEO_INVENTARIO");
+            //=================================
+            encuesta.setE_1("0");
+            encuesta.setE_2(codigo);
+            encuesta.setE_3("");
+            encuesta.setE_4("");
+            encuesta.setE_5("");
+            encuesta.setE_6("");
+            encuesta.setE_7("");
+            encuesta.setE_8(cantidad);
+            encuesta.setE_9("");
+            encuesta.setE_10(GetSharedPreferences.getSharedData(getActivity()).get(0));
+            //##################################
+            upload.setProcedure(proce);
+            upload.setToken(GetSharedPreferences.getSharedData(getActivity()).get(1));
+            upload.setValores(encuesta);
+            //##################################
+            main.add(upload);
+            //##################################
+            api[0] = GetApiService.ApiService(GetSharedPreferences.getSharedData(getActivity()).get(2));
+            api[0].getSave(main).enqueue(new Callback<DatosDownload>() {
+                @Override
+                public void onResponse(Call<DatosDownload> call, Response<DatosDownload> response) {
+                    try {
+                        DatosDownload res =  response.body();
+                        if (response.isSuccessful()){
+                            if (res.getResultado1().get(0).getCampo0().equalsIgnoreCase("1")){
+                                Snackbar.make(layout, res.getResultado1().get(0).getCampo1(),Snackbar.LENGTH_LONG).setBackgroundTint(getActivity().getColor(R.color.success)).show();
+                            }else {
 
-      }catch (Exception e){
-          Log.e("TAG", "GuardarDatos: " + e.fillInStackTrace() );
-      }
+                            }
+                        }
+                    }catch (Exception e){
+                        Log.e("TAG", "onResponse: " + e.fillInStackTrace() );
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<DatosDownload> call, Throwable t) {
+
+                }
+            });
+        }catch (Exception e){
+            Log.e("TAG", "GuardarDatos: " + e.fillInStackTrace() );
+        }
     }
 
     boolean ValidarDatos(){
-        if (!codigo.isEmpty()|| !descripcion.isEmpty() || !cantidad.isEmpty() ){
+        TextView textView = getActivity().findViewById(R.id.search_tv);
+        codigo =textView.getText().toString().trim().split("-")[0];
+        if (!codigo.isEmpty()|| !cantidad.isEmpty() ){
             return true;
         }else {
             Snackbar.make(layout, "Todos los datos son requeridos", Snackbar.LENGTH_LONG).setBackgroundTint(getActivity().getColor(R.color.danger)).show();
@@ -136,30 +177,8 @@ public class Materiales extends Fragment {
         }
     }
 
-    void Search(){
-        try {
-            SQLiteDatabase db = AdminDB.Connection(getActivity());
-            codigo =et_codigo.getText().toString().trim();
-            if (!codigo.isEmpty()){
-                Cursor cursor = db.rawQuery("SELECT * FROM MATERIALES_API WHERE CODIGO LIKE '"+codigo+"' and SERIADO LIKE 'N'", null);
-                if (cursor.getCount()>0){
-                    while (cursor.moveToNext()){
-                        tv_descrpcion.setText(cursor.getString(2));
-                    }
-                }else {
-                    Snackbar.make(layout, "Material no encontrado", Snackbar.LENGTH_LONG).setBackgroundTint(getActivity().getColor(R.color.danger)).show();
-                }
-            }else {
-                Snackbar.make(layout, "Ingrese un código primero", Snackbar.LENGTH_LONG).setBackgroundTint(getActivity().getColor(R.color.danger)).show();
 
-            }
-        }catch (Exception e){
-            Log.e("TAG", "Search: " + e.fillInStackTrace() );
-        }
-    }
     void Clean(){
-        et_codigo.setText("");
         et_cantidad.setText("");
-        tv_descrpcion.setText("");
     }
 }

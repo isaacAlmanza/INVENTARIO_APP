@@ -19,19 +19,25 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.example.inventarioapp.Interface.AdminDB;
+import com.example.inventarioapp.Interface.GetApiService;
+import com.example.inventarioapp.Interface.GetSharedPreferences;
+import com.example.inventarioapp.Interface.InterfaceApi;
+import com.example.inventarioapp.Interface.SendData;
+import com.example.inventarioapp.Models.DatosDownload;
+import com.example.inventarioapp.Models.ModelSaveEncuesta;
+import com.example.inventarioapp.Models.ProcedureUpload;
+import com.example.inventarioapp.Models.SaveDatosUpload;
 import com.example.inventarioapp.R;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.util.ArrayList;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class Materiales_Seriados extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-   // private static final String ARG_PARAM1 = "param1";
-   // private static final String ARG_PARAM2 = "param2";
-
-    // TODO: Rename and change types of parameters
-   // private String mParam1;
-   // private String mParam2;
     TextView tv_descrpcion, tv_grupo;
     ConstraintLayout layout;
     EditText et_codigo, et_cantidad, et_prefijo, et_valor_ini, et_sufijo, et_formato, et_caracter ;
@@ -42,14 +48,10 @@ public class Materiales_Seriados extends Fragment {
         // Required empty public constructor
     }
 
-    public static Materiales_Seriados newInstance(String param1, String param2) {
-        Materiales_Seriados fragment = new Materiales_Seriados();
-        return fragment;
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
     }
 
     @Override
@@ -57,32 +59,29 @@ public class Materiales_Seriados extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_materiales__seriados, container, false);
+
     }
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         Views(view);
+
         btn_agregar.setOnClickListener( v -> {
            if (ValidarDatos()){
                GuardarDatos();
            }
         });
-        btn_search.setOnClickListener(v -> {
-            Search();
-        });
-
 
     }
+
+
     // RELACIONAMOS LAS VISTAS CON LOS FRAGMENTS
     void Views(View view){
-        et_codigo = view.findViewById(R.id.codigoMaterial_s);
         et_cantidad =view.findViewById(R.id.cantidad_mat_s);
         et_formato = view.findViewById(R.id.formato);
         et_caracter =view.findViewById(R.id.caracter);
         btn_agregar = view.findViewById(R.id.agregar_material_s);
-        btn_search =  view.findViewById(R.id.search_s);
-        tv_descrpcion = view.findViewById(R.id.descripcion_material_s);
         et_prefijo =view.findViewById(R.id.prefijo);
         layout =view.findViewById(R.id.layout_materiales);
         et_valor_ini = view.findViewById(R.id.valorInicial);
@@ -90,10 +89,7 @@ public class Materiales_Seriados extends Fragment {
     }
 
     void getTexts(){
-        codigo =et_codigo.getText().toString().trim();
-        descripcion  = tv_descrpcion.getText().toString().trim();
         cantidad = et_cantidad.getText().toString().trim();
-        grupo = tv_grupo.getText().toString().trim();
         prefijo =et_prefijo.getText().toString().trim();
         valor_ini = et_valor_ini.getText().toString().trim();
         sufijo =et_sufijo.getText().toString().trim();
@@ -103,31 +99,70 @@ public class Materiales_Seriados extends Fragment {
 
     void GuardarDatos(){
         try {
-        getTexts();
-        SQLiteDatabase db = AdminDB.Connection(getActivity());
-        ContentValues values = new ContentValues();
-        values.put("CODIGO", codigo );
-        values.put("NOMBRE", descripcion);
-        values.put("GRUPO", grupo);
-        values.put("PREFIJO", prefijo);
-        values.put("VALOR_INI", valor_ini);
-        values.put("SUFIJO", sufijo);
-        values.put("CANTIDAD", cantidad);
-        values.put("ESTADO", "N");
-        Cursor cursor = db.rawQuery("SELECT * FROM MATERIALES_S WHERE CODIGO LIKE '"+codigo+"'", null);
-        if (cursor.getCount()==0){
-            db.insert("MATERIALES_S" ,null, values);
-        }else {
-            db.update("MATERIALES_S",values, "CODIGO =?", new String[]{codigo});
-        }
+             getTexts();
+            TextView textView = getActivity().findViewById(R.id.search_tv);
+            codigo =textView.getText().toString().trim().split("-")[0];
+       // SendData.SendFormulario(getActivity(), codigo, formato,caracter,prefijo,valor_ini, sufijo, cantidad,"Tecnico", 0, "");
 
+            final InterfaceApi[] api = new InterfaceApi[1];
+            ArrayList<SaveDatosUpload> main = new ArrayList<>();
+            SaveDatosUpload upload = new SaveDatosUpload();
+            ModelSaveEncuesta encuesta  = new ModelSaveEncuesta();
+            ProcedureUpload proce = new ProcedureUpload();
+            //##################################
+            proce.setDpto("WS_LEGA_CONTEO_INVENTARIO");
+            //=================================
+            encuesta.setE_1("0");
+            encuesta.setE_2(codigo);
+            encuesta.setE_3(formato);
+            encuesta.setE_4(caracter);
+            encuesta.setE_5(prefijo);
+            encuesta.setE_6(valor_ini);
+            encuesta.setE_7(sufijo);
+            encuesta.setE_8(cantidad);
+            encuesta.setE_9("");
+            encuesta.setE_10(GetSharedPreferences.getSharedData(getActivity()).get(0));
+            //##################################
+            upload.setProcedure(proce);
+            upload.setToken(GetSharedPreferences.getSharedData(getActivity()).get(1));
+            upload.setValores(encuesta);
+            //##################################
+            main.add(upload);
+            //##################################
+            api[0] = GetApiService.ApiService(GetSharedPreferences.getSharedData(getActivity()).get(2));
+            api[0].getSave(main).enqueue(new Callback<DatosDownload>() {
+                @Override
+                public void onResponse(Call<DatosDownload> call, Response<DatosDownload> response) {
+                    try {
+                        DatosDownload res =  response.body();
+                        if (response.isSuccessful()){
+                            if (res.getResultado1().get(0).getCampo0().equalsIgnoreCase("1")){
+                                Snackbar.make(layout, res.getResultado1().get(0).getCampo1(),Snackbar.LENGTH_LONG).setBackgroundTint(getActivity().getColor(R.color.success)).show();
+                                getFragmentManager().beginTransaction().replace(R.id.layout_materiales, new Materiales());
+                            }else {
+
+                            }
+                        }
+                    }catch (Exception e){
+                        Log.e("TAG", "onResponse: " + e.fillInStackTrace() );
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<DatosDownload> call, Throwable t) {
+
+                }
+            });
         }catch (Exception e){
             Log.e("TAG", "GuardarDatos: " + e.fillInStackTrace() );
         }
     }
 
     boolean ValidarDatos(){
-        if (!codigo.isEmpty()|| !descripcion.isEmpty() || !cantidad.isEmpty() || !prefijo.isEmpty() || !valor_ini.isEmpty() || !sufijo.isEmpty() ){
+        getTexts();
+        TextView textView = getActivity().findViewById(R.id.search_tv);
+        codigo =textView.getText().toString().trim().split("-")[0];
+        if (!codigo.isEmpty() || !cantidad.isEmpty() || !prefijo.isEmpty() || !valor_ini.isEmpty() || !sufijo.isEmpty() ||  !formato.isEmpty() || !caracter.isEmpty() ){
             return true;
         }else {
             Snackbar.make(layout, "Todos los datos son requeridos", Snackbar.LENGTH_LONG).setBackgroundTint(getActivity().getColor(R.color.danger)).show();
@@ -135,29 +170,6 @@ public class Materiales_Seriados extends Fragment {
         }
     }
 
-
-    void Search(){
-     try {
-         SQLiteDatabase db = AdminDB.Connection(getActivity());
-         codigo =et_codigo.getText().toString().trim();
-      if (!codigo.isEmpty()){
-          Cursor cursor = db.rawQuery("SELECT * FROM MATERIALES_API WHERE CODIGO LIKE '"+codigo+"' and SERIADO LIKE 'S'", null);
-          if (cursor.getCount()>0){
-              while (cursor.moveToNext()){
-                  tv_descrpcion.setText(cursor.getString(2));
-                  tv_grupo.setText(cursor.getString(1));
-              }
-          }else {
-              Snackbar.make(layout, "Material no encontrado", Snackbar.LENGTH_LONG).setBackgroundTint(getActivity().getColor(R.color.danger)).show();
-          }
-      }else {
-          Snackbar.make(layout, "Ingrese un código primero", Snackbar.LENGTH_LONG).setBackgroundTint(getActivity().getColor(R.color.danger)).show();
-
-      }
-     }catch (Exception e){
-         Log.e("TAG", "Search: " + e.fillInStackTrace() );
-     }
-    }
 
 
 

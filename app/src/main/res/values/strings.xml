@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">INVENTARIO APP</string>
+    <string name="app_name">CONELEC INVENTARIOS</string>
     <string name="tab_text_1">Materiales</string>
     <string name="tab_text_2">Materiales Seriados</string>
     <string name="agregar">Agregar</string>
@@ -46,4 +46,7 @@
     <string name="caracter">Caracter</string>
     <string name="formato">Formato</string>
     <string name="hintSearch">Ingrese una busqueda</string>
+    <string name="materiales">Materiales</string>
+    <string name="a_adir_funcionario">Añadir Funcionario</string>
+    <string name="funcionario">Funcionario</string>
 </resources>

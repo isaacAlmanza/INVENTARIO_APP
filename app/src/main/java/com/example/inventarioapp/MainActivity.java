@@ -1,8 +1,8 @@
 package com.example.inventarioapp;
 
-import static android.widget.SearchView.*;
-
+import android.annotation.SuppressLint;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -17,16 +17,19 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 
-import com.example.inventarioapp.Adapters.Adapter;
+import com.example.inventarioapp.Fragments.Materiales_Seriados;
 import com.example.inventarioapp.Interface.AdminDB;
 import com.example.inventarioapp.Interface.SyncDatos;
 import com.example.inventarioapp.Models.ModelLista;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.core.view.MenuItemCompat;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.viewpager.widget.ViewPager;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -37,11 +40,12 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SearchView;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,47 +60,46 @@ public class MainActivity extends AppCompatActivity {
 
     CoordinatorLayout layout;
     private ActivityMainBinding binding;
-    SearchView searchView;
-    ArrayList<String> copia;
     ArrayList<String> lista;
-    ModelLista modelLista;
+    ArrayList<String> lista_fun;
     TextView textView;
+    TabLayout tabs;
     Dialog dialog;
-    ListView listView_item;
-    ListView listView;
+    Toolbar toolbar;
+    ViewPager viewPager;
+    ProgressDialog progressDialog;
+
     ArrayAdapter<String> adapter_item;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
         layout = findViewById(R.id.layout_main);
-        SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager());
-        ViewPager viewPager = binding.viewPager;
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar_main);
         setSupportActionBar(toolbar);
-       // listView = findViewById(R.id.listView);
+        SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager());
+         viewPager= binding.viewPager;
         viewPager.setAdapter(sectionsPagerAdapter);
-        TabLayout tabs = binding.tabs;
+        tabs = binding.tabs;
         textView = findViewById(R.id.search_tv);
         tabs.setupWithViewPager(viewPager);
-        lista = new ArrayList<>();
-        CargarLista();
-        if (ConexionInternet()){
-          //  new BackGroundMain().execute();
-        }
 
+
+        if (ConexionInternet()) {
+            new BackGroundMain().execute();
+        }
         textView.setOnClickListener(v -> {
             dialog = new Dialog(MainActivity.this);
             dialog.setContentView(R.layout.item);
-            dialog.getWindow().setLayout(650, 800);
-            dialog.getWindow().setBackgroundDrawable( new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             dialog.show();
             EditText et_text = dialog.findViewById(R.id.et_text);
-            listView = dialog.findViewById(R.id.list_view_item);
-            Log.e("TAG", "onCreate: " + listView_item );
+            ListView listView = dialog.findViewById(R.id.list_view_item);
             adapter_item = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, lista);
-            listView_item.setAdapter(adapter_item);
+            listView.setAdapter(adapter_item);
             et_text.addTextChangedListener(new TextWatcher() {
                 @Override
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -106,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
                     adapter_item.getFilter().filter(s);
+                    Log.e("TAG", "onTextChanged: " + s);
                 }
 
                 @Override
@@ -114,127 +118,168 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
-            listView_item.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    textView.setText(adapter_item.getItem(position));
-                    dialog.dismiss();
+            listView.setOnItemClickListener((parent, view, position, id) -> {
+                textView.setText(adapter_item.getItem(position));
+                dialog.dismiss();
+                String tag = textView.getText().toString().trim();
+                if (!tag.isEmpty()) {
+                    if (tag.split("-")[2].equalsIgnoreCase("S")) {
+                        Toast.makeText(MainActivity.this, tag, Toast.LENGTH_LONG).show();
+                        tabs.selectTab(tabs.getTabAt(1));
+                        TextView grupo = viewPager.findViewById(R.id.grupo_material);
+                        // Log.e("TAG", "onCreate: "+ grupo );
+
+                        SQLiteDatabase db = AdminDB.Connection(MainActivity.this);
+                        Cursor cursor = db.rawQuery("SELECT GRUPO, NOM_GRUPO FROM MATERIALES_API WHERE CODIGO LIKE '" + tag.split("-")[0].trim() + "' ", null);
+                        if (cursor.getCount() > 0) {
+                            cursor.moveToPosition(0);
+                            grupo.setText(cursor.getString(1));
+                            grupo.setTag(cursor.getString(0));
+                        }
+
+                    }
                 }
             });
         });
 
     }
 
-    void CargarLista(){
-        SQLiteDatabase db = AdminDB.Connection(MainActivity.this);
-        Cursor cursor = db.rawQuery("SELECT * FROM MATERIALES_API", null);
-       if ( cursor.getCount()>0){
-          while (cursor.moveToNext()){
-              lista.add(cursor.getString(0)+"-"+cursor.getString(2));
-          }
-       }
-     //   adapter = new Adapter(MainActivity.this, cursor, 0);
-      //  listView.setAdapter(adapter);
-       // copia = new ArrayList<>();
-        // copia.addAll(lista);
+    void AddFuncionario(){
+
+            dialog = new Dialog(MainActivity.this);
+            dialog.setContentView(R.layout.item);
+            dialog.getWindow().setLayout(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.show();
+
+            EditText et_text = dialog.findViewById(R.id.et_text);
+            ListView listView = dialog.findViewById(R.id.list_view_item);
+            adapter_item = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, lista);
+            listView.setAdapter(adapter_item);
+            et_text.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    adapter_item.getFilter().filter(s);
+                    Log.e("TAG", "onTextChanged: " + s);
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+
+                }
+            });
+
+            listView.setOnItemClickListener((parent, view, position, id) -> {
+                dialog.dismiss();
+                String tag = adapter_item.getItem(position);
+                String material = textView.getText().toString().trim();
+                if (material.isEmpty()){
+                    Snackbar.make(layout, "Selecciona un material e intenta nuevamente", Snackbar.LENGTH_LONG).setBackgroundTint(getColor(R.color.danger)).show();
+                    return;
+                }
+                if (!tag.isEmpty() && material.split("-")[0].equalsIgnoreCase("S")) {
+                        Toast.makeText(MainActivity.this, tag, Toast.LENGTH_LONG).show();
+                    tabs.selectTab(tabs.getTabAt(1));
+                    TextView funcioario = viewPager.findViewById(R.id.funcionario_s);
+                    funcioario.setText(tag.split("-")[1]);
+                    funcioario.setTag(tag.split("-")[0]);
+                }else {
+                    tabs.selectTab(tabs.getTabAt(0));
+                    TextView funcioario = viewPager.findViewById(R.id.funcionario);
+                    funcioario.setText(tag.split("-")[1]);
+                    funcioario.setTag(tag.split("-")[0]);
+                }
+            });
+
     }
 
+
+    void CargarLista() {
+        SQLiteDatabase db = AdminDB.Connection(MainActivity.this);
+        @SuppressLint("Recycle") Cursor cursor = db.rawQuery("SELECT * FROM MATERIALES_API", null);
+        if (cursor.getCount() > 0) {
+
+            while (cursor.moveToNext()) {
+
+                lista.add(cursor.getString(0) + "-" + cursor.getString(2) + "-" + cursor.getString(4));
+            }
+            Log.e("TAG", "CargarLista: lista Cargada"+ lista.size() );
+        }
+    }
 
 
     // METODO QUE CONSULTADO EL ESTADO DEL INTERNET EN UN MOMENTO ESPECIFICO
-    public boolean ConexionInternet(){
+    public boolean ConexionInternet() {
         ConnectivityManager conn = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo =  conn.getActiveNetworkInfo();
+        NetworkInfo networkInfo = conn.getActiveNetworkInfo();
         if (networkInfo != null) {
             return networkInfo.getState() == NetworkInfo.State.CONNECTED;
-        }else {
-            Snackbar.make(layout,"No tienes acceso a internet, verifica e intenta nuevamente",Snackbar.LENGTH_LONG).setBackgroundTint(getColor(R.color.danger)).show();
+        } else {
+            Snackbar.make(layout, "No tienes acceso a internet, verifica e intenta nuevamente", Snackbar.LENGTH_LONG).setBackgroundTint(getColor(R.color.danger)).show();
         }
         return false;
     }
-    public  class BackGroundMain extends AsyncTask<String, Void, String>{
+
+    public class BackGroundMain extends AsyncTask<String, Void, String> {
+        int con =0;
+        @Override
+        protected void onPreExecute() {
+            progressDialog = new ProgressDialog(MainActivity.this);
+            progressDialog.setTitle("Sincronizando...");
+            progressDialog.setMax(100);
+            progressDialog.setCancelable(false);
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progressDialog.setMessage("Verficando Información...\nPor favor espere unos minutos");
+            progressDialog.setProgress(0);
+            progressDialog.show();
+            super.onPreExecute();
+            lista = new ArrayList<>();
+        }
 
         @Override
         protected String doInBackground(String... strings) {
 
-          try {
-              for (int i = 1; i <= 2; i++) {
-                  SyncDatos.SinronzarDatos(i, MainActivity.this);
-              }
-          }catch (Exception e){
-              Log.e("TAG", "doInBackground: " +e.fillInStackTrace() );
-          }
+            try {
+
+                for (int i = 1; i <= 2; i++) {
+                 con  = SyncDatos.SinronzarDatos(i, MainActivity.this);
+                    Thread.sleep(5000);
+                }
+            } catch (Exception e) {
+                Log.e("TAG", "doInBackground: " + e.fillInStackTrace());
+            }
             return null;
         }
-    }
 
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        HandlerIntent(intent);
-    }
-    void HandlerIntent(Intent intent){
-        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-            String query = intent.getStringExtra(SearchManager.QUERY);
-          if (query!=null){
-              Filtrado_Codigo(query);
-          }
+        @Override
+        protected void onPostExecute(String s) {
+            progressDialog.dismiss();
+
+                CargarLista();
+
+            super.onPostExecute(s);
+
         }
-    }
-
-    public void Filtrado_Codigo(final String buscar){
-        Log.e("TAG", "Filtrado_Codigo: enra" + buscar );
-        if (buscar.length()==0) {
-            lista.clear();
-            lista.addAll(copia);
-        }else {
-            if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.N) {
-                lista.clear();
-                List<String> collect = copia.stream().
-                        filter(i ->String.valueOf(i).
-                                toLowerCase().contains(buscar))
-                        .collect(Collectors
-                                .toList());
-
-               lista.addAll(collect);
-            }else {
-                lista.clear();
-                for (String  i: copia) {
-                    if (String.valueOf(i).toLowerCase().contains(buscar)){
-                        lista.add(i);
-                    }
-                }
-            }
-        }
-
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
-        final MenuItem searchItem = menu.findItem(R.id.search_item);
-        SearchManager manager = (SearchManager) getSystemService(SEARCH_SERVICE);
-        final androidx.appcompat.widget.SearchView searchView = (androidx.appcompat.widget.SearchView) MenuItemCompat.getActionView(searchItem);
-        //permite modificar el hint que el EditText muestra por defecto
-        searchView.setSearchableInfo( manager.getSearchableInfo( new ComponentName(this, Busqueda.class)));
-       /* searchView.setOnQueryTextListener(new androidx.appcompat.widget.SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String query) {
-                Toast.makeText(MainActivity.this, "", Toast.LENGTH_SHORT).show();
-                //se oculta el EditText
-                searchView.setQuery("", false);
-                searchView.setIconified(true);
-                return false;
-            }
+        getMenuInflater().inflate(R.menu.menu, menu);
+        return true;
+    }
 
-            @Override
-            public boolean onQueryTextChange(String newText) {
-                return false;
-            }
-        });
-
-        */
-        return super.onCreateOptionsMenu(menu);
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.add_funcionario:
+               AddFuncionario();
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 }
