@@ -1,0 +1,49 @@
+<resources>
+    <string name="app_name">INVENTARIO APP</string>
+    <string name="tab_text_1">Materiales</string>
+    <string name="tab_text_2">Materiales Seriados</string>
+    <string name="agregar">Agregar</string>
+    <string name="c_digo_material">Código Material</string>
+    <string name="prefijo">Prefijo</string>
+    <string name="token">tokenApp</string>
+    <string name="valor_inicial">Valor Inicial</string>
+    <string name="sufijo">Sufijo</string>
+    <string name="cantidad">Cantidad</string>
+    <string name="descripci_n_material">Descripción Material</string>
+    <string name="grupo">Grupo</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="seleccione_un_formato_para_continuar">Seleccione un formato para continuar</string>
+    <string name="volver">volver</string>
+    <string name="actas_enviadas">Actas Enviadas</string>
+    <string name="proyectos">Proyectos</string>
+    <string name="recorridos">Recorridos</string>
+    <string name="continuar">Continuar</string>
+    <string name="autenticaci_n">Autenticación</string>
+    <string name="ingrese_un_servidor">Ingrese un Servidor</string>
+    <string name="ingrese_un_dominio">Ingrese un Dominio</string>
+    <string name="c_dula_usuario">Cédula Usuario</string>
+    <string name="c_digo_de_usuario">Código de Usuario</string>
+    <string name="autenticarme">Autenticarme</string>
+    <string name="generar_actas">Generar Actas</string>
+    <string name="observaciones">Observaciones</string>
+    <string name="firma">Firma</string>
+    <string name="guardar">Guardar</string>
+    <string name="no_tienes_encuestas_realizadas">No Tienes Encuestas Realizadas</string>
+    <string name="id_encuesta">Id encuesta: </string>
+    <string name="observaci_n">Observación: </string>
+    <string name="fecha">Fecha: </string>
+    <string name="c_digo">Código: </string>
+    <string name="no_hay_participantes_agregados">¡No hay participantes agregados!</string>
+    <string name="prueba_titulo_item_1_xxxxxxxxxxxx">prueba titulo item 1 XXXXXXXXXXXX</string>
+    <string name="title_activity_evidencias">Evidencias</string>
+    <string name="add_firmas">Agregar Firmas</string>
+    <string name="agregar_firma">agregar firma</string>
+    <string name="galeria">Galeria</string>
+    <string name="searchtext">Ingrese el Código del técnico</string>
+    <string name="searchtextGalery">Ingrese un id</string>
+    <string name="caracter">Caracter</string>
+    <string name="formato">Formato</string>
+    <string name="hintSearch">Ingrese una busqueda</string>
+</resources>
