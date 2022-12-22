@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 
@@ -11,6 +12,8 @@ import com.example.inventarioapp.Models.DatosDownload;
 import com.example.inventarioapp.Models.DatosSync;
 import com.example.inventarioapp.Models.DatosUpload;
 import com.example.inventarioapp.Models.ProcedureUpload;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Objects;
 import retrofit2.Call;
@@ -19,7 +22,7 @@ import retrofit2.Response;
 
 public interface SyncDatos {
 
-   static int SinronzarDatos(int pos, Context context){
+   static int SinronzarDatos(int pos, Context context, View  layout){
        final int[] con = {0};
        InterfaceApi api;
         api  = GetApiService.ApiService(GetSharedPreferences.getSharedData(context).get(2));
@@ -28,7 +31,7 @@ public interface SyncDatos {
         DatosSync datos = new DatosSync();
         ProcedureUpload proce = new ProcedureUpload();
         proce.setDpto("WS_PARAMETROS_INVENTARIOS");
-        datos.setOpcion("1");
+        datos.setOpcion(String.valueOf(pos));
         datos.setE1("");
         datos.setE2("");
         datos.setE3("");
@@ -46,11 +49,12 @@ public interface SyncDatos {
                 if (response.isSuccessful()){
                     con[0]++;
                     String s_1, s_2, s_3, s_4, s_5, s_6;
-                    ContentValues values = new ContentValues();
+
                     switch (pos){
                         case 1:
                             db.delete("MATERIALES_API", null, null);
                             for (int i = 0; i < Objects.requireNonNull(res).getResultado1().size(); i++) {
+                                ContentValues values = new ContentValues();
                                 s_1 = res.getResultado1().get(i).getCampo0();
                                 s_2 = res.getResultado1().get(i).getCampo1();
                                 s_3 = res.getResultado1().get(i).getCampo2();
@@ -65,7 +69,26 @@ public interface SyncDatos {
                             }
 
                             break;
+                        case 2:
+                            db.delete("CUADRILLAS", null, null);
+                            for (int i = 0; i < Objects.requireNonNull(res).getResultado1().size(); i++) {
+                                ContentValues values = new ContentValues();
+                                s_1 = res.getResultado1().get(i).getCampo0();
+                                s_2 = res.getResultado1().get(i).getCampo1();
+                                s_3 = res.getResultado1().get(i).getCampo2();
+                                values.put("CODIGO",s_1);
+                                values.put("CUADRILLA",s_3);
+                                values.put("NOMBRE",s_2);
+                                db.insert("CUADRILLAS", null, values);
+                            }
 
+                            break;
+                    }
+                }else {
+                    try {
+                        ViewSnackBar.SnackBarDanger(layout, response.errorBody().string(),context);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
 
@@ -74,7 +97,7 @@ public interface SyncDatos {
 
             @Override
             public void onFailure(@NonNull Call<DatosDownload> call, @NonNull Throwable t) {
-
+                ViewSnackBar.SnackBarDanger(layout, t.fillInStackTrace().getMessage(),context);
             }
 
         });

@@ -32,7 +32,7 @@
     <string name="guardar">Guardar</string>
     <string name="no_tienes_encuestas_realizadas">No Tienes Encuestas Realizadas</string>
     <string name="id_encuesta">Id encuesta: </string>
-    <string name="observaci_n">Observación: </string>
+    <string name="observaci_n">Observación</string>
     <string name="fecha">Fecha: </string>
     <string name="c_digo">Código: </string>
     <string name="no_hay_participantes_agregados">¡No hay participantes agregados!</string>
@@ -49,4 +49,6 @@
     <string name="materiales">Materiales</string>
     <string name="a_adir_funcionario">Añadir Funcionario</string>
     <string name="funcionario">Funcionario</string>
+    <string name="cerrar_sesi_n">Cerrar sesion</string>
+    <string name="sincronizar">Sincronizar</string>
 </resources>

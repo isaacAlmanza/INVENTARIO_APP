@@ -24,6 +24,8 @@ public class ModelSaveEncuesta {
     private String e_9;
     @SerializedName("10")
     private String e_10;
+    @SerializedName("11")
+    private String e_11;
 
 
     public String getE_1() {
@@ -107,4 +109,11 @@ public class ModelSaveEncuesta {
     }
 
 
+    public String getE_11() {
+        return e_11;
+    }
+
+    public void setE_11(String e_11) {
+        this.e_11 = e_11;
+    }
 }

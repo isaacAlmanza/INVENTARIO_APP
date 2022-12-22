@@ -7,4 +7,13 @@
         android:id="@+id/add_funcionario"
         app:showAsAction="always"
         android:icon="@drawable/ic_baseline_person_add_alt_24" />
+    <item
+        android:title="@string/cerrar_sesi_n"
+        android:id="@+id/logout"
+        android:icon="@drawable/ic_baseline_logout_24"/>
+    <item
+        android:title="@string/sincronizar"
+        android:id="@+id/sync"
+        android:icon="@drawable/ic_baseline_logout_24"/>
+
 </menu>

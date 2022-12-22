@@ -28,6 +28,7 @@ import android.widget.Toast;
 import com.example.inventarioapp.Interface.GetApiService;
 import com.example.inventarioapp.Interface.GetSharedPreferences;
 import com.example.inventarioapp.Interface.InterfaceApi;
+import com.example.inventarioapp.Interface.ViewSnackBar;
 import com.example.inventarioapp.Models.LoginAuthReq;
 import com.example.inventarioapp.Models.LoginAuthRes;
 import com.google.android.material.snackbar.Snackbar;
@@ -38,7 +39,7 @@ import retrofit2.Response;
 
 public class Login extends AppCompatActivity {
     String TAG = "eRROr";
-    ConstraintLayout layout;
+    FrameLayout layout;
     InterfaceApi api;
     String imei;
     String url, TOKEN;
@@ -114,7 +115,7 @@ public class Login extends AppCompatActivity {
             requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE, Manifest.permission.INTERNET },PHONESTATS);
         }
     }
-    private void verifyPermission() {
+                         private void verifyPermission() {
         int permsRequestCode = 100;
         String[] perms = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.CAMERA, Manifest.permission.INTERNET};
         int accessFinePermission = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
@@ -162,7 +163,7 @@ public class Login extends AppCompatActivity {
         String servidor = et_server.getText().toString().trim();
         String dominio = et_dominio.getText().toString().trim();
         if (codigo.isEmpty() || cedula.isEmpty() || servidor.isEmpty() || dominio.isEmpty()){
-            Snackbar.make(layout, "Ingrese los datos para continuar", Snackbar.LENGTH_LONG).setBackgroundTint(getResources().getColor(R.color.danger)).show();
+            ViewSnackBar.SnackBarDanger(layout, "Ingrese los datos para continuar", Login.this);
             return true;
         }
         return false;
@@ -189,26 +190,27 @@ public class Login extends AppCompatActivity {
                     if (response.isSuccessful()) {
                         if (!res.getToken().isEmpty()) {
                             SaveToken(res.getToken(), url, imei);
-                            Snackbar.make(layout, res.getMsgError(), Snackbar.LENGTH_LONG).setBackgroundTint(getResources().getColor(R.color.success)).show();
+                            ViewSnackBar.SnackBarSuccess(layout,res.getMsgError(),Login.this );
                             Intent intent = new Intent(Login.this, MainActivity.class);
                             intent.putExtra("url", url);
                             startActivity(intent);
                             finish();
                         }else {
-                            Snackbar.make(layout, res.getMsgError(), Snackbar.LENGTH_LONG).setBackgroundTint(getResources().getColor(R.color.danger)).show();
+                            ViewSnackBar.SnackBarDanger(layout, res.getMsgError(), Login.this);
                         }
                     }else {
-                        Snackbar.make(layout, "Inicio de Sesion Fallido, Verifique sus Credenciales", Snackbar.LENGTH_LONG).setBackgroundTint(getResources().getColor(R.color.danger)).show();
+                        ViewSnackBar.SnackBarDanger(layout, "Inicio de Sesion Fallido, Verifique sus Credenciales", Login.this);
                     }
                 }
 
                 @Override
                 public void onFailure(Call<LoginAuthRes> call, Throwable t) {
-                    Snackbar.make(layout, t.getMessage().toString(), Snackbar.LENGTH_LONG).setBackgroundTint(getResources().getColor(R.color.danger)).show();
+                    ViewSnackBar.SnackBarDanger(layout, t.getMessage(), Login.this);
+
                 }
             });
         }catch (Exception e){
-            Snackbar.make(layout, e.getMessage(), Snackbar.LENGTH_LONG).setBackgroundTint(getResources().getColor(R.color.danger)).show();
+            ViewSnackBar.SnackBarDanger(layout, e.getMessage(), Login.this);
         }
 
     }
